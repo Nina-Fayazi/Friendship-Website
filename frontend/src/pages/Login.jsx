@@ -18,9 +18,12 @@ function Login() {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:8000/api/auth/login', formData);
-      setMessage('Login successful!');
-      
+     setMessage('Login successful! Redirecting...');
       localStorage.setItem('token', response.data.token);
+     
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
      
     } catch (error) {
       setMessage(error.response?.data?.message || 'Invalid email or password!');
