@@ -2,6 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken'); 
 const User = require('../models/User');
+const { protect } = require('../middleware/authMiddleware');
 
 
 router.post('/register', async (req, res) => {
@@ -25,8 +26,7 @@ router.post('/register', async (req, res) => {
 
     const savedUser = await User.create(newUser);
     
-    
-    const token = jwt.sign({ id: savedUser._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ id: savedUser._id }, process.env.JWT_SECRET || 'secretkey', { expiresIn: '1d' });
 
     res.status(201).json({
       message: "User registered successfully!",
@@ -42,23 +42,19 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-
     
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid Email or Password" });
     }
-
    
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(400).json({ message: "Invalid Email or Password" });
     }
-
     
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secretkey', { expiresIn: '1d' });
 
-   
     res.status(200).json({
       message: "Logged in successfully!",
       token,
@@ -73,6 +69,19 @@ router.post('/login', async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+
+router.get('/me', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

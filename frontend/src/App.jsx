@@ -4,16 +4,16 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import Navbar from './components/Navbar'; // ۱. وارد کردن نوبار
 
 function App() {
   return (
     <Router>
+      <Navbar /> {/* ۲. قرار دادن نوبار در بالای تمام صفحات */}
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
-        
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        
         
         <Route 
           path="/dashboard" 
