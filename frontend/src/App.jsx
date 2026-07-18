@@ -3,15 +3,24 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Home from './pages/Home'; 
 import ProtectedRoute from './components/ProtectedRoute';
-import Navbar from './components/Navbar'; // ۱. وارد کردن نوبار
+import Navbar from './components/Navbar';
 
 function App() {
   return (
     <Router>
-      <Navbar /> {/* ۲. قرار دادن نوبار در بالای تمام صفحات */}
+      <Navbar />
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+       
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } 
+        />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         
