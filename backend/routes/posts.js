@@ -41,3 +41,32 @@ router.get('/feed', async (req, res) => {
 });
 
 module.exports = router;
+
+
+router.put('/:id/like', protect, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+   
+    const isLiked = post.likes.includes(req.userId);
+
+    if (isLiked) {
+     
+      post.likes = post.likes.filter(id => id.toString() !== req.userId);
+    } else {
+     
+      post.likes.push(req.userId);
+    }
+
+    const updatedPost = await post.save();
+   
+    const populatedPost = await updatedPost.populate('user', 'username');
+
+    res.status(200).json(populatedPost);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
