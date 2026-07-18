@@ -20,6 +20,10 @@ mongoose.connect(uri)
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter); 
 
+const postRoute = require('./routes/posts');
+
+app.use('/api/posts', postRoute);
+
 
 app.get('/', (req, res) => {
   res.send('Server is running!');
