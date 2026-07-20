@@ -4,10 +4,12 @@ import axios from 'axios';
 function Home() {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
-  const [commentInputs, setCommentInputs] = useState({}); 
+  const [commentInputs, setCommentInputs] = useState({});
   const [error, setError] = useState('');
   
   const token = localStorage.getItem('token');
+  
+  
   const getUserIdFromToken = () => {
     if (!token) return null;
     try {
@@ -20,6 +22,7 @@ function Home() {
     }
   };
   const currentUserId = getUserIdFromToken();
+
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -34,6 +37,7 @@ function Home() {
     fetchPosts();
   }, []);
 
+ 
   const handleCreatePost = async (e) => {
     e.preventDefault();
     if (!newPost.trim()) return;
@@ -52,6 +56,7 @@ function Home() {
     }
   };
 
+ 
   const handleLike = async (postId) => {
     try {
       const response = await axios.put(
@@ -79,9 +84,25 @@ function Home() {
       );
 
       setPosts(posts.map(post => post._id === postId ? response.data : post));
-      setCommentInputs({ ...commentInputs, [postId]: '' }); 
+      setCommentInputs({ ...commentInputs, [postId]: '' });
     } catch (err) {
       console.error('Failed to add comment:', err);
+    }
+  };
+
+  
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+
+    try {
+      await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setPosts(posts.filter(post => post._id !== postId));
+    } catch (err) {
+      console.error('Failed to delete post:', err);
+      alert('Could not delete post.');
     }
   };
 
@@ -91,6 +112,7 @@ function Home() {
       
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
+      
       <form onSubmit={handleCreatePost} style={{ marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <textarea
           value={newPost}
@@ -104,6 +126,7 @@ function Home() {
         </button>
       </form>
 
+      
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {posts.length === 0 ? (
           <p style={{ color: '#888', textAlign: 'center' }}>No posts yet. Be the first to post!</p>
@@ -113,9 +136,25 @@ function Home() {
 
             return (
               <div key={post._id} style={{ padding: '15px', border: '1px solid #e0e0e0', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-                <strong style={{ color: '#333' }}>@{post.user ? post.user.username : 'Unknown User'}</strong>
+                
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong style={{ color: '#333' }}>@{post.user ? post.user.username : 'Unknown User'}</strong>
+                  
+                 
+                  {post.user && post.user._id === currentUserId && (
+                    <button 
+                      onClick={() => handleDeletePost(post._id)}
+                      style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                    >
+                      Delete 🗑️
+                    </button>
+                  )}
+                </div>
+
                 <p style={{ margin: '10px 0', color: '#555' }}>{post.content}</p>
                 
+               
                 <button 
                   onClick={() => handleLike(post._id)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '15px', color: hasLiked ? '#e63946' : '#666', fontWeight: hasLiked ? 'bold' : 'normal', padding: '0', marginBottom: '15px' }}
