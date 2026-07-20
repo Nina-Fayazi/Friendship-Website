@@ -40,6 +40,18 @@ router.get('/feed', async (req, res) => {
   }
 });
 
+
+router.get('/user/:userId', protect, async (req, res) => {
+  try {
+    const posts = await Post.find({ user: req.params.userId })
+      .populate('user', 'username email')
+      .sort({ createdAt: -1 });
+    res.status(200).json(posts);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 module.exports = router;
 
 

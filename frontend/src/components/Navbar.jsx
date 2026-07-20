@@ -11,34 +11,20 @@ function Navbar() {
   };
 
   return (
-    <nav style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '10px 20px',
-      backgroundColor: '#333',
-      color: 'white',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
-        <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>Friendship App</Link>
-      </div>
-      
-      <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+    <nav style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 30px', backgroundColor: '#1a1a1a', color: 'white', alignItems: 'center' }}>
+      <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '20px', fontWeight: 'bold' }}>
+        Friendship App
+      </Link>
+
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
         {token ? (
          
           <>
-            <Link to="/dashboard" style={{ color: 'white', textDecoration: 'none' }}>Dashboard</Link>
+            <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>Home Feed</Link>
+            <Link to="/profile" style={{ color: 'white', textDecoration: 'none' }}>Profile</Link>
             <button 
               onClick={handleLogout} 
-              style={{
-                padding: '5px 10px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '5px', cursor: 'pointer' }}
             >
               Logout
             </button>
