@@ -4,8 +4,8 @@ import axios from 'axios';
 function Home() {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
+  const [commentInputs, setCommentInputs] = useState({}); 
   const [error, setError] = useState('');
-  
   
   const token = localStorage.getItem('token');
   const getUserIdFromToken = () => {
@@ -52,7 +52,6 @@ function Home() {
     }
   };
 
-  
   const handleLike = async (postId) => {
     try {
       const response = await axios.put(
@@ -60,11 +59,29 @@ function Home() {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      
       setPosts(posts.map(post => post._id === postId ? response.data : post));
     } catch (err) {
       console.error('Error liking post:', err);
+    }
+  };
+
+ 
+  const handleAddComment = async (e, postId) => {
+    e.preventDefault();
+    const commentText = commentInputs[postId];
+    if (!commentText || !commentText.trim()) return;
+
+    try {
+      const response = await axios.post(
+        `http://localhost:8000/api/posts/${postId}/comment`,
+        { text: commentText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setPosts(posts.map(post => post._id === postId ? response.data : post));
+      setCommentInputs({ ...commentInputs, [postId]: '' }); 
+    } catch (err) {
+      console.error('Failed to add comment:', err);
     }
   };
 
@@ -92,7 +109,6 @@ function Home() {
           <p style={{ color: '#888', textAlign: 'center' }}>No posts yet. Be the first to post!</p>
         ) : (
           posts.map((post) => {
-            
             const hasLiked = post.likes && post.likes.includes(currentUserId);
 
             return (
@@ -100,24 +116,44 @@ function Home() {
                 <strong style={{ color: '#333' }}>@{post.user ? post.user.username : 'Unknown User'}</strong>
                 <p style={{ margin: '10px 0', color: '#555' }}>{post.content}</p>
                 
-               
                 <button 
                   onClick={() => handleLike(post._id)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    color: hasLiked ? '#e63946' : '#666',
-                    fontWeight: hasLiked ? 'bold' : 'normal',
-                    padding: '0'
-                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '15px', color: hasLiked ? '#e63946' : '#666', fontWeight: hasLiked ? 'bold' : 'normal', padding: '0', marginBottom: '15px' }}
                 >
                   {hasLiked ? '❤️' : '🤍'} {post.likes ? post.likes.length : 0} Likes
                 </button>
+
+                
+                <div style={{ marginTop: '10px', borderTop: '1px solid #ddd', paddingTop: '10px' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#444' }}>Comments</h4>
+                  
+                  {post.comments && post.comments.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+                      {post.comments.map((comment, index) => (
+                        <div key={index} style={{ backgroundColor: '#fff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #eee', fontSize: '13px' }}>
+                          <strong>@{comment.user ? comment.user.username : 'User'}: </strong>
+                          <span>{comment.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: '12px', color: '#888', margin: '5px 0' }}>No comments yet.</p>
+                  )}
+
+                 
+                  <form onSubmit={(e) => handleAddComment(e, post._id)} style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                    <input 
+                      type="text" 
+                      placeholder="Write a comment..." 
+                      value={commentInputs[post._id] || ''} 
+                      onChange={(e) => setCommentInputs({ ...commentInputs, [post._id]: e.target.value })}
+                      style={{ flex: 1, padding: '6px 10px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '13px' }}
+                    />
+                    <button type="submit" style={{ padding: '6px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
+                      Reply
+                    </button>
+                  </form>
+                </div>
               </div>
             );
           })

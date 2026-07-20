@@ -27,11 +27,12 @@ router.post('/create', protect, async (req, res) => {
 });
 
 
+
 router.get('/feed', async (req, res) => {
   try {
-    
     const posts = await Post.find()
       .populate('user', 'username')
+      .populate('comments.user', 'username') 
       .sort({ createdAt: -1 });
       
     res.status(200).json(posts);
@@ -47,6 +48,38 @@ router.get('/user/:userId', protect, async (req, res) => {
       .populate('user', 'username email')
       .sort({ createdAt: -1 });
     res.status(200).json(posts);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+
+router.post('/:id/comment', protect, async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ message: "Comment text is required" });
+    }
+
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const newComment = {
+      text,
+      user: req.userId
+    };
+
+    post.comments.push(newComment);
+    await post.save();
+
+    
+    const updatedPost = await Post.findById(req.params.id)
+      .populate('user', 'username')
+      .populate('comments.user', 'username');
+
+    res.status(200).json(updatedPost);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
