@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 
-
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -82,6 +81,38 @@ router.get('/me', protect, async (req, res) => {
     res.status(200).json({ user });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+router.get('/search', protect, async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) return res.json([]);
+
+    const users = await User.find({
+      $or: [
+        { username: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } }
+      ]
+    }).select('-password');
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// دریافت اطلاعات یک کاربر مشخص بر اساس ID (برای صفحه پروفایل)
+router.get('/user/:id', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

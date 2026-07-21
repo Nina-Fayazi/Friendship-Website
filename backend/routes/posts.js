@@ -1,168 +1,163 @@
-const router = require('express').Router();
+const express = require('express');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
 const Post = require('../models/Post');
-const { protect } = require('../middleware/authMiddleware');
 
+// میدل‌ور احراز هویت
+const auth = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
 
-router.post('/create', protect, async (req, res) => {
   try {
-    const { content } = req.body;
-    if (!content) {
-      return res.status(400).json({ message: "Content is required" });
-    }
-
-    const newPost = new Post({
-      content,
-      user: req.userId 
-    });
-
-    const savedPost = await newPost.save();
-    
-    
-    const populatedPost = await savedPost.populate('user', 'username email');
-
-    res.status(201).json(populatedPost);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    req.user = decoded;
+    next();
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(401).json({ message: 'Token is not valid' });
+  }
+};
+
+// 1. Create Post
+router.post('/', auth, async (req, res) => {
+  try {
+    const newPost = new Post({ content: req.body.content, user: req.user.id });
+    const savedPost = await newPost.save();
+    await savedPost.populate('user', 'username');
+    res.json(savedPost);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-
-
-router.get('/feed', async (req, res) => {
+// 2. Get Feed Posts
+router.get('/feed', auth, async (req, res) => {
   try {
     const posts = await Post.find()
       .populate('user', 'username')
-      .populate('comments.user', 'username') 
+      .populate('comments.user', 'username')
       .sort({ createdAt: -1 });
-      
-    res.status(200).json(posts);
+    res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-
-router.get('/user/:userId', protect, async (req, res) => {
+// 3. Get User Posts
+router.get('/user/:userId', auth, async (req, res) => {
   try {
     const posts = await Post.find({ user: req.params.userId })
-      .populate('user', 'username email')
+      .populate('user', 'username')
+      .populate('comments.user', 'username')
       .sort({ createdAt: -1 });
-    res.status(200).json(posts);
+    res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-
-router.post('/:id/comment', protect, async (req, res) => {
+// 4. Like / Unlike Post
+router.put('/:id/like', auth, async (req, res) => {
   try {
-    const { text } = req.body;
-    if (!text) {
-      return res.status(400).json({ message: "Comment text is required" });
-    }
-
     const post = await Post.findById(req.params.id);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    if (post.likes.includes(req.user.id)) {
+      post.likes = post.likes.filter((id) => id.toString() !== req.user.id);
+    } else {
+      post.likes.push(req.user.id);
     }
+    await post.save();
+    res.json(post.likes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    const newComment = {
-      text,
-      user: req.userId
-    };
+// 5. Add Reply/Comment
+router.post('/:id/comment', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
 
+    const newComment = { user: req.user.id, text: req.body.text };
     post.comments.push(newComment);
     await post.save();
-
-    
-    const updatedPost = await Post.findById(req.params.id)
-      .populate('user', 'username')
-      .populate('comments.user', 'username');
-
-    res.status(200).json(updatedPost);
+    await post.populate('comments.user', 'username');
+    res.json(post.comments);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-
-router.delete('/:id', protect, async (req, res) => {
+// 6. Edit Comment/Reply (جدید 🌟)
+router.put('/:id/comment/:commentId', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.status(404).json({ message: 'Comment not found' });
+
+    if (comment.user.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    
-    if (post.user.toString() !== req.userId) {
-      return res.status(403).json({ message: "Not authorized to delete this post" });
+    comment.text = req.body.text;
+    await post.save();
+    await post.populate('comments.user', 'username');
+    res.json(post.comments);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 7. Delete Comment/Reply
+router.delete('/:id/comment/:commentId', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    post.comments = post.comments.filter((c) => c._id.toString() !== req.params.commentId);
+    await post.save();
+    res.json(post.comments);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 8. Edit Post
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    if (post.user.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    post.content = req.body.content;
+    await post.save();
+    res.json(post);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 9. Delete Post
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    if (post.user.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
     await post.deleteOne();
-    res.status(200).json({ message: "Post deleted successfully", postId: req.params.id });
+    res.json({ message: 'Post deleted successfully' });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-
-router.put('/:id', protect, async (req, res) => {
-  try {
-    const { content } = req.body;
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: "Content cannot be empty" });
-    }
-
-    const post = await Post.findById(req.params.id);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    
-    if (post.user.toString() !== req.userId) {
-      return res.status(403).json({ message: "Not authorized to edit this post" });
-    }
-
-    post.content = content;
-    await post.save();
-
-    const updatedPost = await Post.findById(req.params.id)
-      .populate('user', 'username')
-      .populate('comments.user', 'username');
-
-    res.status(200).json(updatedPost);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
 module.exports = router;
-
-
-router.put('/:id/like', protect, async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-   
-    const isLiked = post.likes.includes(req.userId);
-
-    if (isLiked) {
-     
-      post.likes = post.likes.filter(id => id.toString() !== req.userId);
-    } else {
-     
-      post.likes.push(req.userId);
-    }
-
-    const updatedPost = await post.save();
-   
-    const populatedPost = await updatedPost.populate('user', 'username');
-
-    res.status(200).json(populatedPost);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
