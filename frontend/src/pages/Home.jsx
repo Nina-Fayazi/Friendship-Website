@@ -5,10 +5,11 @@ function Home() {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [commentInputs, setCommentInputs] = useState({});
+  const [editingPostId, setEditingPostId] = useState(null); 
+  const [editContent, setEditContent] = useState(''); 
   const [error, setError] = useState('');
   
   const token = localStorage.getItem('token');
-  
   
   const getUserIdFromToken = () => {
     if (!token) return null;
@@ -23,7 +24,6 @@ function Home() {
   };
   const currentUserId = getUserIdFromToken();
 
-
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -37,7 +37,6 @@ function Home() {
     fetchPosts();
   }, []);
 
- 
   const handleCreatePost = async (e) => {
     e.preventDefault();
     if (!newPost.trim()) return;
@@ -56,7 +55,6 @@ function Home() {
     }
   };
 
- 
   const handleLike = async (postId) => {
     try {
       const response = await axios.put(
@@ -70,7 +68,6 @@ function Home() {
     }
   };
 
- 
   const handleAddComment = async (e, postId) => {
     e.preventDefault();
     const commentText = commentInputs[postId];
@@ -90,7 +87,6 @@ function Home() {
     }
   };
 
-  
   const handleDeletePost = async (postId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
 
@@ -98,11 +94,42 @@ function Home() {
       await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
       setPosts(posts.filter(post => post._id !== postId));
     } catch (err) {
       console.error('Failed to delete post:', err);
       alert('Could not delete post.');
+    }
+  };
+
+  
+  const startEditing = (post) => {
+    setEditingPostId(post._id);
+    setEditContent(post.content);
+  };
+
+
+  const cancelEditing = () => {
+    setEditingPostId(null);
+    setEditContent('');
+  };
+
+  
+  const handleUpdatePost = async (postId) => {
+    if (!editContent.trim()) return;
+
+    try {
+      const response = await axios.put(
+        `http://localhost:8000/api/posts/${postId}`,
+        { content: editContent },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setPosts(posts.map(post => post._id === postId ? response.data : post));
+      setEditingPostId(null);
+      setEditContent('');
+    } catch (err) {
+      console.error('Failed to update post:', err);
+      alert('Failed to update post.');
     }
   };
 
@@ -112,7 +139,6 @@ function Home() {
       
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      
       <form onSubmit={handleCreatePost} style={{ marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <textarea
           value={newPost}
@@ -126,35 +152,67 @@ function Home() {
         </button>
       </form>
 
-      
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {posts.length === 0 ? (
           <p style={{ color: '#888', textAlign: 'center' }}>No posts yet. Be the first to post!</p>
         ) : (
           posts.map((post) => {
             const hasLiked = post.likes && post.likes.includes(currentUserId);
+            const isEditing = editingPostId === post._id;
 
             return (
               <div key={post._id} style={{ padding: '15px', border: '1px solid #e0e0e0', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-                
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong style={{ color: '#333' }}>@{post.user ? post.user.username : 'Unknown User'}</strong>
                   
                  
-                  {post.user && post.user._id === currentUserId && (
-                    <button 
-                      onClick={() => handleDeletePost(post._id)}
-                      style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-                    >
-                      Delete 🗑️
-                    </button>
+                  {post.user && post.user._id === currentUserId && !isEditing && (
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button 
+                        onClick={() => startEditing(post)}
+                        style={{ backgroundColor: '#ffc107', color: '#000', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        Edit ✏️
+                      </button>
+                      <button 
+                        onClick={() => handleDeletePost(post._id)}
+                        style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        Delete 🗑️
+                      </button>
+                    </div>
                   )}
                 </div>
 
-                <p style={{ margin: '10px 0', color: '#555' }}>{post.content}</p>
-                
                
+                {isEditing ? (
+                  <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+                    <textarea 
+                      value={editContent} 
+                      onChange={(e) => setEditContent(e.target.value)}
+                      style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                      rows="2"
+                    />
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '5px' }}>
+                      <button 
+                        onClick={() => handleUpdatePost(post._id)}
+                        style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        Save
+                      </button>
+                      <button 
+                        onClick={cancelEditing}
+                        style={{ backgroundColor: '#6c757d', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{ margin: '10px 0', color: '#555' }}>{post.content}</p>
+                )}
+                
                 <button 
                   onClick={() => handleLike(post._id)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '15px', color: hasLiked ? '#e63946' : '#666', fontWeight: hasLiked ? 'bold' : 'normal', padding: '0', marginBottom: '15px' }}
@@ -162,7 +220,7 @@ function Home() {
                   {hasLiked ? '❤️' : '🤍'} {post.likes ? post.likes.length : 0} Likes
                 </button>
 
-                
+              
                 <div style={{ marginTop: '10px', borderTop: '1px solid #ddd', paddingTop: '10px' }}>
                   <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#444' }}>Comments</h4>
                   
@@ -179,7 +237,6 @@ function Home() {
                     <p style={{ fontSize: '12px', color: '#888', margin: '5px 0' }}>No comments yet.</p>
                   )}
 
-                 
                   <form onSubmit={(e) => handleAddComment(e, post._id)} style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                     <input 
                       type="text" 

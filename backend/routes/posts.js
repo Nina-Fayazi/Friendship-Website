@@ -105,6 +105,37 @@ router.delete('/:id', protect, async (req, res) => {
   }
 });
 
+
+router.put('/:id', protect, async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: "Content cannot be empty" });
+    }
+
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    
+    if (post.user.toString() !== req.userId) {
+      return res.status(403).json({ message: "Not authorized to edit this post" });
+    }
+
+    post.content = content;
+    await post.save();
+
+    const updatedPost = await Post.findById(req.params.id)
+      .populate('user', 'username')
+      .populate('comments.user', 'username');
+
+    res.status(200).json(updatedPost);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 module.exports = router;
 
 
