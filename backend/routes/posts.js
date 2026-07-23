@@ -20,6 +20,10 @@ const auth = (req, res, next) => {
 // 1. Create Post
 router.post('/', auth, async (req, res) => {
   try {
+    if (!req.body.content || !req.body.content.trim()) {
+      return res.status(400).json({ message: 'Post content cannot be empty' });
+    }
+
     const newPost = new Post({ content: req.body.content, user: req.user.id });
     const savedPost = await newPost.save();
     await savedPost.populate('user', 'username');
@@ -89,7 +93,7 @@ router.post('/:id/comment', auth, async (req, res) => {
   }
 });
 
-// 6. Edit Comment/Reply (جدید 🌟)
+// 6. Edit Comment/Reply
 router.put('/:id/comment/:commentId', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);

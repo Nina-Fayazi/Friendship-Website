@@ -16,7 +16,7 @@ function Home() {
   const [error, setError] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
   
-  // 🌟 استیت لیست فالوینگ‌ها
+  // استیت لیست فالوینگ‌ها
   const [followingList, setFollowingList] = useState([]);
 
   const token = localStorage.getItem('token');
@@ -29,7 +29,7 @@ function Home() {
       });
       const user = res.data.user || res.data;
       setCurrentUserId(user._id);
-      setFollowingList(user.following || []); // ذخیره فالوینگ‌ها
+      setFollowingList(user.following || []);
     } catch (err) {
       console.error('Error fetching current user:', err);
     }
@@ -167,7 +167,7 @@ function Home() {
     }
   };
 
-  // 🌟 ۸. تابع مدیریت فالو / انفالو
+  // ۸. مدیریت فالو / انفالو
   const handleFollowToggle = async (userId) => {
     const isFollowing = followingList.includes(userId);
     const endpoint = isFollowing ? 'unfollow' : 'follow';
@@ -215,12 +215,11 @@ function Home() {
         return (
           <div key={post._id} style={{ background: '#fff', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #ddd' }}>
             
-            {/* Header (اسم کاربر + دکمه فالو + دکمه‌های ادیت/دلیت) */}
+            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <p style={{ fontWeight: 'bold', margin: 0 }}>@{post.user?.username || 'User'}</p>
                 
-                {/* دکمه فالو/انفالو (فقط برای پست بقیه کاربران) */}
                 {!isPostOwner && post.user?._id && (
                   <button
                     onClick={() => handleFollowToggle(post.user._id)}
@@ -239,7 +238,6 @@ function Home() {
                 )}
               </div>
 
-              {/* دکمه‌های ویرایش و حذف پستِ خود کاربر */}
               {isPostOwner && (
                 <div>
                   <button 
@@ -258,7 +256,7 @@ function Home() {
               )}
             </div>
 
-            {/* Post Content / Edit Mode */}
+            {/* Post Content */}
             {editingPostId === post._id ? (
               <div style={{ margin: '15px 0' }}>
                 <input
@@ -296,7 +294,6 @@ function Home() {
                 return (
                   <div key={comment._id} style={{ background: '#f8f9fa', padding: '8px 12px', borderRadius: '6px', marginBottom: '6px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     
-                    {/* حالت ویرایش کامنت یا نمایش عادی */}
                     {editingCommentId === comment._id ? (
                       <div style={{ display: 'flex', gap: '5px', width: '100%' }}>
                         <input
@@ -315,7 +312,6 @@ function Home() {
                           <span>{comment.text}</span>
                         </div>
 
-                        {/* دکمه‌های Edit و Delete کامنت (فقط برای صاحب کامنت) */}
                         {isCommentOwner && (
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             <button 
@@ -352,7 +348,7 @@ function Home() {
                 />
                 <button 
                   onClick={() => handleAddComment(post._id)} 
-                  style={{ padding: '6px 12px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
                   Reply
                 </button>
