@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 function Profile() {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // ➕ متغیرهای لازم برای دکمه فالو
   const [currentUserId, setCurrentUserId] = useState('');
   const [isFollowing, setIsFollowing] = useState(false);
 
@@ -20,7 +20,6 @@ function Profile() {
       setLoading(true);
       setError('');
       try {
-        // ۱. دریافت اطلاعات کاربر آنلاین (خودمان)
         const meRes = await axios.get('http://localhost:8000/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -29,7 +28,6 @@ function Profile() {
         setCurrentUserId(myId);
 
         if (userId) {
-          // دریافت اطلاعات کامل کاربر مقصد (برای اینکه شمارنده فالورها درست بیاید)
           try {
             const uRes = await axios.get(`http://localhost:8000/api/auth/user/${userId}`, {
               headers: { Authorization: `Bearer ${token}` }
@@ -37,14 +35,12 @@ function Profile() {
             const targetUser = uRes.data.user || uRes.data;
             setUserProfile(targetUser);
 
-            // بررسی اینکه آیا ما این کاربر را فالو داریم یا نه
             if (currentUser.following && currentUser.following.includes(userId)) {
               setIsFollowing(true);
             } else {
               setIsFollowing(false);
             }
           } catch (e) {
-            // اگر API کاربر نبود، همان منطق قبلی خودت اجرا شود
             const postsRes = await axios.get(`http://localhost:8000/api/posts/user/${userId}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
@@ -56,14 +52,12 @@ function Profile() {
             }
           }
 
-          // دریافت پست‌های کاربر مقصد
           const postsRes = await axios.get(`http://localhost:8000/api/posts/user/${userId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setPosts(postsRes.data);
 
         } else {
-          // دریافت اطلاعات کاربر جاری (پروفایل خودت)
           setUserProfile(currentUser);
 
           const postsRes = await axios.get(`http://localhost:8000/api/posts/user/${myId}`, {
@@ -82,7 +76,6 @@ function Profile() {
     fetchProfileData();
   }, [userId, token]);
 
-  // ➕ تابع کلیک روی دکمه فالو / آنفالو
   const handleFollowToggle = async () => {
     if (!userId || userId === currentUserId) return;
 
@@ -95,7 +88,6 @@ function Profile() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // تغییر حالت دکمه و کم/زیاد کردن عدد فالورها بدون رفرش صفحه
       setIsFollowing(!isFollowing);
       setUserProfile((prev) => {
         const prevFollowers = prev.followers || [];
@@ -139,7 +131,7 @@ function Profile() {
             </div>
           </div>
 
-          {/* 🌟 دکمه فالو / آنفالو (دقیقاً زیر بخش Followers) */}
+          {/* دکمه فالو / آنفالو برای پروفایل دیگران */}
           {!isOwnProfile && (
             <button
               onClick={handleFollowToggle}
@@ -156,6 +148,26 @@ function Profile() {
               }}
             >
               {isFollowing ? 'Unfollow' : 'Follow'}
+            </button>
+          )}
+
+          {/* دکمه ویرایش پروفایل (فقط روی پروفایل خود کاربر) */}
+          {isOwnProfile && (
+            <button
+              onClick={() => navigate('/edit-profile')}
+              style={{
+                marginTop: '15px',
+                padding: '8px 20px',
+                borderRadius: '6px',
+                border: '1px solid #ccc',
+                backgroundColor: '#fff',
+                color: '#333',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              Edit Profile
             </button>
           )}
         </div>
