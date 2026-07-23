@@ -115,5 +115,46 @@ router.get('/user/:id', protect, async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+// ویرایش پروفایل کاربر (Username و Bio)
+router.put('/update-profile', protect, async (req, res) => {
+  try {
+    const { username, bio } = req.body;
+    
+    // پیدا کردن کاربر با استفاده از آیدی موجود در توکن (req.userId یا req.user)
+    const userId = req.userId || req.user;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // اگر یوزرنیم جدیدی وارد شده بود، بررسی کنیم تکراری نباشد
+    if (username && username !== user.username) {
+      const usernameExists = await User.findOne({ username });
+      if (usernameExists) {
+        return res.status(400).json({ message: 'Username already taken' });
+      }
+      user.username = username;
+    }
+
+    if (bio !== undefined) {
+      user.bio = bio;
+    }
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully!",
+      user: {
+        id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        bio: updatedUser.bio
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
 
 module.exports = router;
