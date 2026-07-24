@@ -5,7 +5,6 @@ const multer = require('multer');
 const path = require('path');
 const Post = require('../models/Post');
 
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -16,7 +15,6 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
-
 
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -30,6 +28,22 @@ const auth = (req, res, next) => {
     res.status(401).json({ message: 'Token is not valid' });
   }
 };
+
+
+router.get('/single/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .populate('user', 'username')
+      .populate('comments.user', 'username');
+      
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    res.json(post);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 router.post('/', auth, upload.single('image'), async (req, res) => {
@@ -101,6 +115,7 @@ router.put('/:id/like', auth, async (req, res) => {
   }
 });
 
+
 router.post('/:id/comment', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -137,7 +152,6 @@ router.put('/:id/comment/:commentId', auth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 router.delete('/:id/comment/:commentId', auth, async (req, res) => {
   try {
