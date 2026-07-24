@@ -131,7 +131,7 @@ function Profile() {
             </div>
           </div>
 
-          {/* دکمه فالو / آنفالو برای پروفایل دیگران */}
+          
           {!isOwnProfile && (
             <button
               onClick={handleFollowToggle}
@@ -151,7 +151,7 @@ function Profile() {
             </button>
           )}
 
-          {/* دکمه ویرایش پروفایل (فقط روی پروفایل خود کاربر) */}
+          
           {isOwnProfile && (
             <button
               onClick={() => navigate('/edit-profile')}

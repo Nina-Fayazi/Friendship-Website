@@ -11,7 +11,7 @@ function EditProfile() {
 
   const token = localStorage.getItem('token');
 
-  // گرفتن اطلاعات فعلی کاربر برای نمایش در فرم
+  
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -28,7 +28,7 @@ function EditProfile() {
     fetchUserData();
   }, [token]);
 
-  // ارسال اطلاعات ویرایش شده به سرور
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
@@ -42,7 +42,7 @@ function EditProfile() {
       );
       setMessage(res.data.message);
       setTimeout(() => {
-        navigate('/profile'); // هدایت به صفحه پروفایل پس از موفقیت
+        navigate('/profile'); 
       }, 1000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update profile');

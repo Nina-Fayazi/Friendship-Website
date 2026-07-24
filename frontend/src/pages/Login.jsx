@@ -8,6 +8,7 @@ function Login() {
     password: ''
   });
   const [message, setMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -18,7 +19,7 @@ function Login() {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:8000/api/auth/login', formData);
-     setMessage('Login successful! Redirecting...');
+      setMessage('Login successful! Redirecting...');
       localStorage.setItem('token', response.data.token);
      
       setTimeout(() => {
@@ -36,12 +37,40 @@ function Login() {
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '15px' }}>
           <label>Email:</label>
-          <input type="email" name="email" value={formData.email} onChange={handleChange} required style={{ width: '100%', padding: '8px', marginTop: '5px' }} />
+          <input type="email" name="email" value={formData.email} onChange={handleChange} required style={{ width: '100%', padding: '8px', marginTop: '5px', boxSizing: 'border-box' }} />
         </div>
+
+        
         <div style={{ marginBottom: '15px' }}>
           <label>Password:</label>
-          <input type="password" name="password" value={formData.password} onChange={handleChange} required style={{ width: '100%', padding: '8px', marginTop: '5px' }} />
+          <div style={{ position: 'relative', marginTop: '5px' }}>
+            <input 
+              type={showPassword ? "text" : "password"} 
+              name="password" 
+              value={formData.password} 
+              onChange={handleChange} 
+              required 
+              style={{ width: '100%', padding: '8px', paddingRight: '40px', boxSizing: 'border-box' }} 
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
+            >
+              {showPassword ? "👁️‍🗨️" : "👁️"}
+            </button>
+          </div>
         </div>
+
         <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Login</button>
       </form>
       {message && <p style={{ marginTop: '15px', color: message.includes('successful') ? 'green' : 'red' }}>{message}</p>}

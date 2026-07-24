@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// میدل‌ور تشخیص کاربر لاگین‌شده
+
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
@@ -17,7 +17,7 @@ const auth = (req, res, next) => {
   }
 };
 
-// 1. فالو کردن
+
 router.put('/:id/follow', auth, async (req, res) => {
   if (req.user.id === req.params.id) {
     return res.status(400).json({ message: 'You cannot follow yourself' });
@@ -45,7 +45,7 @@ router.put('/:id/follow', auth, async (req, res) => {
   }
 });
 
-// 2. انفالو کردن
+
 router.put('/:id/unfollow', auth, async (req, res) => {
   if (req.user.id === req.params.id) {
     return res.status(400).json({ message: 'You cannot unfollow yourself' });

@@ -9,7 +9,7 @@ const commentSchema = new mongoose.Schema({
 const postSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   content: { type: String},
-  image: { type: String }, // فیلد جدید برای ذخیره مسیر عکس
+  image: { type: String }, 
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   comments: [commentSchema]
 }, { timestamps: true });
