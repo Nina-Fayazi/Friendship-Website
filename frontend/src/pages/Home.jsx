@@ -4,12 +4,12 @@ import axios from 'axios';
 function Home() {
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState('');
-  const [image, setImage] = useState(null); // 🌟 استیت جدید برای ذخیره عکس انتخابی
+  const [image, setImage] = useState(null); 
   
   const [editingPostId, setEditingPostId] = useState(null);
   const [editContent, setEditContent] = useState('');
   
-  // استیت‌های ویرایش کامنت
+  
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
 
@@ -18,12 +18,12 @@ function Home() {
   const [error, setError] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
   
-  // استیت لیست فالوینگ‌ها
+
   const [followingList, setFollowingList] = useState([]);
 
   const token = localStorage.getItem('token');
 
-  // دریافت اطلاعات کاربر جاری (شامل لیست فالوینگ‌ها)
+  
   const fetchUser = async () => {
     try {
       const res = await axios.get('http://localhost:8000/api/auth/me', {
@@ -41,7 +41,7 @@ function Home() {
     if (token) fetchUser();
   }, [token]);
 
-  // دریافت پست‌ها
+  
   const fetchPosts = async () => {
     try {
       const res = await axios.get('http://localhost:8000/api/posts/feed', {
@@ -61,7 +61,7 @@ function Home() {
     fetchPosts();
   }, []);
 
-  // ۱. ایجاد پست (با قابلیت ارسال عکس و FormData)
+  
   const handleCreatePost = async (e) => {
     e.preventDefault();
     if (!content.trim() && !image) return;
@@ -91,7 +91,7 @@ function Home() {
     }
   };
 
-  // ۲. لایک پست
+
   const handleLike = async (postId) => {
     try {
       await axios.put(
@@ -105,7 +105,7 @@ function Home() {
     }
   };
 
-  // ۳. ثبت ریپلای
+  
   const handleAddComment = async (postId) => {
     const text = commentText[postId];
     if (!text || !text.trim()) return;
@@ -123,7 +123,7 @@ function Home() {
     }
   };
 
-  // ۴. ویرایش ریپلای
+  
   const handleSaveEditComment = async (postId, commentId) => {
     if (!editCommentText.trim()) return;
     try {
@@ -140,7 +140,7 @@ function Home() {
     }
   };
 
-  // ۵. حذف ریپلای
+  
   const handleDeleteComment = async (postId, commentId) => {
     try {
       await axios.delete(`http://localhost:8000/api/posts/${postId}/comment/${commentId}`, {
@@ -152,7 +152,7 @@ function Home() {
     }
   };
 
-  // ۶. ذخیره ویرایش پست
+  
   const handleSaveEdit = async (postId) => {
     try {
       await axios.put(
@@ -167,7 +167,7 @@ function Home() {
     }
   };
 
-  // ۷. حذف پست
+  
   const handleDeletePost = async (postId) => {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
 
@@ -181,7 +181,7 @@ function Home() {
     }
   };
 
-  // ۸. مدیریت فالو / انفالو
+  
   const handleFollowToggle = async (userId) => {
     const isFollowing = followingList.includes(userId);
     const endpoint = isFollowing ? 'unfollow' : 'follow';
@@ -212,7 +212,8 @@ function Home() {
             onChange={(e) => setContent(e.target.value)}
           />
           
-          {/* 🌟 اینپوت انتخاب عکس */}
+         
+
           <div style={{ marginTop: '10px' }}>
             <input 
               type="file" 
@@ -233,7 +234,7 @@ function Home() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {!loading && posts.length === 0 && <p>No posts to display yet.</p>}
 
-      {/* Feed Posts */}
+      
       {posts.map((post) => {
         const isPostOwner = post.user?._id === currentUserId;
 
@@ -281,7 +282,7 @@ function Home() {
               )}
             </div>
 
-            {/* Post Content */}
+            
             {editingPostId === post._id ? (
               <div style={{ margin: '15px 0' }}>
                 <input
@@ -297,7 +298,7 @@ function Home() {
               <div style={{ margin: '15px 0' }}>
                 {post.content && <p style={{ fontSize: '16px', margin: '0 0 10px 0' }}>{post.content}</p>}
                 
-                {/* 🌟 نمایش عکس پست اگر وجود داشت */}
+                
                 {post.image && (
                   <img 
                     src={`http://localhost:8000${post.image}`} 
@@ -320,7 +321,7 @@ function Home() {
 
             <hr style={{ border: '0.5px solid #eee' }} />
 
-            {/* Replies List */}
+            
             <div style={{ marginTop: '10px' }}>
               <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#555' }}>Replies</h4>
               
@@ -373,7 +374,7 @@ function Home() {
                 );
               })}
 
-              {/* Add Reply Input */}
+              
               <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
                 <input
                   type="text"

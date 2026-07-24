@@ -103,7 +103,7 @@ router.get('/search', protect, async (req, res) => {
   }
 });
 
-// دریافت اطلاعات یک کاربر مشخص بر اساس ID (برای صفحه پروفایل)
+
 router.get('/user/:id', protect, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
@@ -115,12 +115,12 @@ router.get('/user/:id', protect, async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
-// ویرایش پروفایل کاربر (Username و Bio)
+
 router.put('/update-profile', protect, async (req, res) => {
   try {
     const { username, bio } = req.body;
     
-    // پیدا کردن کاربر با استفاده از آیدی موجود در توکن (req.userId یا req.user)
+    
     const userId = req.userId || req.user;
     const user = await User.findById(userId);
 
@@ -128,7 +128,7 @@ router.put('/update-profile', protect, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // اگر یوزرنیم جدیدی وارد شده بود، بررسی کنیم تکراری نباشد
+  
     if (username && username !== user.username) {
       const usernameExists = await User.findOne({ username });
       if (usernameExists) {

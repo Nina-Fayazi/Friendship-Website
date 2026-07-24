@@ -5,7 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const Post = require('../models/Post');
 
-// تنظیمات ذخیره‌سازی عکس با Multer
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// میدل‌ور احراز هویت
+
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
@@ -31,7 +31,7 @@ const auth = (req, res, next) => {
   }
 };
 
-// 1. Create Post (با قابلیت آپلود عکس)
+
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
     if ((!req.body.content || !req.body.content.trim()) && !req.file) {
@@ -57,7 +57,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
   }
 });
 
-// 2. Get Feed Posts
+
 router.get('/feed', auth, async (req, res) => {
   try {
     const posts = await Post.find()
@@ -70,7 +70,7 @@ router.get('/feed', auth, async (req, res) => {
   }
 });
 
-// 3. Get User Posts
+
 router.get('/user/:userId', auth, async (req, res) => {
   try {
     const posts = await Post.find({ user: req.params.userId })
@@ -83,7 +83,7 @@ router.get('/user/:userId', auth, async (req, res) => {
   }
 });
 
-// 4. Like / Unlike Post
+
 router.put('/:id/like', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -101,7 +101,6 @@ router.put('/:id/like', auth, async (req, res) => {
   }
 });
 
-// 5. Add Reply/Comment
 router.post('/:id/comment', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -117,7 +116,7 @@ router.post('/:id/comment', auth, async (req, res) => {
   }
 });
 
-// 6. Edit Comment/Reply
+
 router.put('/:id/comment/:commentId', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -139,7 +138,7 @@ router.put('/:id/comment/:commentId', auth, async (req, res) => {
   }
 });
 
-// 7. Delete Comment/Reply
+
 router.delete('/:id/comment/:commentId', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -153,7 +152,7 @@ router.delete('/:id/comment/:commentId', auth, async (req, res) => {
   }
 });
 
-// 8. Edit Post
+
 router.put('/:id', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -171,7 +170,7 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// 9. Delete Post
+
 router.delete('/:id', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
