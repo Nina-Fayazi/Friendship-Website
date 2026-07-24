@@ -1,7 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
 const Post = require('../models/Post');
+
+// تنظیمات ذخیره‌سازی عکس با Multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
 
 // میدل‌ور احراز هویت
 const auth = (req, res, next) => {
@@ -17,18 +31,28 @@ const auth = (req, res, next) => {
   }
 };
 
-// 1. Create Post
-router.post('/', auth, async (req, res) => {
+// 1. Create Post (با قابلیت آپلود عکس)
+router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
-    if (!req.body.content || !req.body.content.trim()) {
-      return res.status(400).json({ message: 'Post content cannot be empty' });
+    if ((!req.body.content || !req.body.content.trim()) && !req.file) {
+      return res.status(400).json({ message: 'Post content or image cannot be empty' });
     }
 
-    const newPost = new Post({ content: req.body.content, user: req.user.id });
+    const newPostData = {
+      content: req.body.content || '',
+      user: req.user.id
+    };
+
+    if (req.file) {
+      newPostData.image = `/uploads/${req.file.filename}`;
+    }
+
+    const newPost = new Post(newPostData);
     const savedPost = await newPost.save();
     await savedPost.populate('user', 'username');
     res.json(savedPost);
   } catch (err) {
+    console.log("CREATE POST ERROR:", err); 
     res.status(500).json({ error: err.message });
   }
 });

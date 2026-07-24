@@ -4,6 +4,8 @@ import axios from 'axios';
 function Home() {
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState('');
+  const [image, setImage] = useState(null); // 🌟 استیت جدید برای ذخیره عکس انتخابی
+  
   const [editingPostId, setEditingPostId] = useState(null);
   const [editContent, setEditContent] = useState('');
   
@@ -59,18 +61,30 @@ function Home() {
     fetchPosts();
   }, []);
 
-  // ۱. ایجاد پست
+  // ۱. ایجاد پست (با قابلیت ارسال عکس و FormData)
   const handleCreatePost = async (e) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() && !image) return;
 
     try {
+      const formData = new FormData();
+      formData.append('content', content);
+      if (image) {
+        formData.append('image', image);
+      }
+
       await axios.post(
         'http://localhost:8000/api/posts',
-        { content },
-        { headers: { Authorization: `Bearer ${token}` } }
+        formData,
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data' 
+          } 
+        }
       );
       setContent('');
+      setImage(null);
       fetchPosts();
     } catch (err) {
       alert('Failed to create post');
@@ -197,6 +211,17 @@ function Home() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
+          
+          {/* 🌟 اینپوت انتخاب عکس */}
+          <div style={{ marginTop: '10px' }}>
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={(e) => setImage(e.target.files[0])}
+              style={{ fontSize: '14px' }}
+            />
+          </div>
+
           <button type="submit" style={{ marginTop: '10px', padding: '8px 16px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
             Post
           </button>
@@ -269,7 +294,18 @@ function Home() {
                 <button onClick={() => setEditingPostId(null)} style={{ marginLeft: '5px', padding: '6px 12px', background: '#6c757d', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
               </div>
             ) : (
-              <p style={{ fontSize: '16px', margin: '15px 0' }}>{post.content}</p>
+              <div style={{ margin: '15px 0' }}>
+                {post.content && <p style={{ fontSize: '16px', margin: '0 0 10px 0' }}>{post.content}</p>}
+                
+                {/* 🌟 نمایش عکس پست اگر وجود داشت */}
+                {post.image && (
+                  <img 
+                    src={`http://localhost:8000${post.image}`} 
+                    alt="Post attachment" 
+                    style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '6px', objectFit: 'cover' }} 
+                  />
+                )}
+              </div>
             )}
 
             {/* Like Button */}
@@ -348,7 +384,7 @@ function Home() {
                 />
                 <button 
                   onClick={() => handleAddComment(post._id)} 
-                style={{ padding: '6px 12px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
                   Reply
                 </button>

@@ -8,10 +8,10 @@ const commentSchema = new mongoose.Schema({
 
 const postSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content: { type: String, required: true },
+  content: { type: String},
+  image: { type: String }, // فیلد جدید برای ذخیره مسیر عکس
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  comments: [commentSchema],
-  createdAt: { type: Date, default: Date.now }
-});
+  comments: [commentSchema]
+}, { timestamps: true });
 
 module.exports = mongoose.model('Post', postSchema);
