@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import EditProfile from './pages/EditProfile';
+import PostDetails from './components/PostDetails';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/posts/:id" element={<PostDetails />} />
         <Route 
           path="/dashboard" 
           element={
