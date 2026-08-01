@@ -10,7 +10,6 @@ function Home() {
   const [editingPostId, setEditingPostId] = useState(null);
   const [editContent, setEditContent] = useState('');
   
-  
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
 
@@ -19,12 +18,10 @@ function Home() {
   const [error, setError] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
   
-
   const [followingList, setFollowingList] = useState([]);
 
   const token = localStorage.getItem('token');
 
-  
   const fetchUser = async () => {
     try {
       const res = await axios.get('http://localhost:8000/api/auth/me', {
@@ -42,7 +39,6 @@ function Home() {
     if (token) fetchUser();
   }, [token]);
 
-  
   const fetchPosts = async () => {
     try {
       const res = await axios.get('http://localhost:8000/api/posts/feed', {
@@ -62,7 +58,6 @@ function Home() {
     fetchPosts();
   }, []);
 
-  
   const handleCreatePost = async (e) => {
     e.preventDefault();
     if (!content.trim() && !image) return;
@@ -92,7 +87,6 @@ function Home() {
     }
   };
 
-
   const handleLike = async (postId) => {
     try {
       await axios.put(
@@ -106,7 +100,6 @@ function Home() {
     }
   };
 
-  
   const handleAddComment = async (postId) => {
     const text = commentText[postId];
     if (!text || !text.trim()) return;
@@ -124,7 +117,6 @@ function Home() {
     }
   };
 
-  
   const handleSaveEditComment = async (postId, commentId) => {
     if (!editCommentText.trim()) return;
     try {
@@ -141,7 +133,6 @@ function Home() {
     }
   };
 
-  
   const handleDeleteComment = async (postId, commentId) => {
     try {
       await axios.delete(`http://localhost:8000/api/posts/${postId}/comment/${commentId}`, {
@@ -153,7 +144,6 @@ function Home() {
     }
   };
 
-  
   const handleSaveEdit = async (postId) => {
     try {
       await axios.put(
@@ -168,7 +158,6 @@ function Home() {
     }
   };
 
-  
   const handleDeletePost = async (postId) => {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
 
@@ -182,7 +171,6 @@ function Home() {
     }
   };
 
-  
   const handleFollowToggle = async (userId) => {
     const isFollowing = followingList.includes(userId);
     const endpoint = isFollowing ? 'unfollow' : 'follow';
@@ -212,8 +200,6 @@ function Home() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
-          
-         
 
           <div style={{ marginTop: '10px' }}>
             <input 
@@ -235,7 +221,6 @@ function Home() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {!loading && posts.length === 0 && <p>No posts to display yet.</p>}
 
-      
       {posts.map((post) => {
         const isPostOwner = post.user?._id === currentUserId;
 
@@ -297,20 +282,21 @@ function Home() {
               </div>
             ) : (
               <div style={{ margin: '15px 0' }}>
-                {post.content && <p style={{ fontSize: '16px', margin: '0 0 10px 0' }}>{post.content}</p>}
-                
-                
-                {post.image && (
-                  <img 
-                    src={`http://localhost:8000${post.image}`} 
-                    alt="Post attachment" 
-                    style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '6px', objectFit: 'cover' }} 
-                  />
-                )}
+                <Link to={`/posts/${post._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  {post.content && <p style={{ fontSize: '16px', margin: '0 0 10px 0' }}>{post.content}</p>}
+                  
+                  {post.image && (
+                    <img 
+                      src={`http://localhost:8000${post.image}`} 
+                      alt="Post attachment" 
+                      style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '6px', objectFit: 'cover' }} 
+                    />
+                  )}
+                </Link>
               </div>
             )}
 
-            {/* Like Button */}
+            
             <div style={{ marginBottom: '15px' }}>
               <button 
                 onClick={() => handleLike(post._id)} 
@@ -375,7 +361,6 @@ function Home() {
                 );
               })}
 
-              
               <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
                 <input
                   type="text"
