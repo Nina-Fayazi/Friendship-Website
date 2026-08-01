@@ -124,7 +124,7 @@ function Profile() {
             )}
           </div>
 
-          <h2 style={{ margin: '5px 0' }}>@{userProfile.username}</h2>
+          <h2 style={{ margin: '5px 0' }}>{userProfile.username}</h2>
           {userProfile.email && <p style={{ color: '#666', margin: '5px 0' }}>{userProfile.email}</p>}
           <p style={{ fontWeight: 'bold', color: '#007bff', marginTop: '10px' }}>
             Total Posts: {posts.length}
@@ -176,7 +176,7 @@ function Profile() {
                 fontSize: '14px'
               }}
             >
-              Edit Profile
+             
             </button>
           )}
         </div>
