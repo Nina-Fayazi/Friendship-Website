@@ -30,11 +30,41 @@ const auth = (req, res, next) => {
 };
 
 
-router.get('/single/:id', auth, async (req, res) => {
+router.get('/feed', auth, async (req, res) => {
+  try {
+    const posts = await Post.find()
+      .populate('user', 'username')
+      .populate('comments.user', 'username')
+      .populate('comments.replies.user', 'username')
+      .sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) {
+    console.log("FEED ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.get('/user/:userId', auth, async (req, res) => {
+  try {
+    const posts = await Post.find({ user: req.params.userId })
+      .populate('user', 'username')
+      .populate('comments.user', 'username')
+      .populate('comments.replies.user', 'username')
+      .sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.get('/:id', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
       .populate('user', 'username')
-      .populate('comments.user', 'username');
+      .populate('comments.user', 'username')
+      .populate('comments.replies.user', 'username');
       
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
@@ -44,7 +74,6 @@ router.get('/single/:id', auth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
@@ -70,33 +99,6 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
-router.get('/feed', auth, async (req, res) => {
-  try {
-    const posts = await Post.find()
-      .populate('user', 'username')
-      .populate('comments.user', 'username')
-      .sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-router.get('/user/:userId', auth, async (req, res) => {
-  try {
-    const posts = await Post.find({ user: req.params.userId })
-      .populate('user', 'username')
-      .populate('comments.user', 'username')
-      .sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 
 router.put('/:id/like', auth, async (req, res) => {
   try {
@@ -153,6 +155,7 @@ router.put('/:id/comment/:commentId', auth, async (req, res) => {
   }
 });
 
+
 router.delete('/:id/comment/:commentId', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -196,6 +199,32 @@ router.delete('/:id', auth, async (req, res) => {
 
     await post.deleteOne();
     res.json({ message: 'Post deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.post('/:id/comment/:commentId/reply', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.status(404).json({ message: 'Comment not found' });
+
+    const newReply = { 
+      user: req.user.id, 
+      text: req.body.text 
+    };
+    
+    if (!comment.replies) comment.replies = [];
+    comment.replies.push(newReply);
+    
+    await post.save();
+    
+    await post.populate('comments.user comments.replies.user', 'username');
+    res.json(post.comments);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

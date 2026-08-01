@@ -14,6 +14,9 @@ function Home() {
   const [editCommentText, setEditCommentText] = useState('');
 
   const [commentText, setCommentText] = useState({});
+  const [replyingToCommentId, setReplyingToCommentId] = useState(null);
+  const [replyTextMap, setReplyTextMap] = useState({});
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
@@ -113,7 +116,25 @@ function Home() {
       setCommentText({ ...commentText, [postId]: '' });
       fetchPosts();
     } catch (err) {
-      alert('Failed to add reply');
+      alert('Failed to add comment');
+    }
+  };
+
+  const handleSendReply = async (postId, commentId) => {
+    const text = replyTextMap[commentId];
+    if (!text || !text.trim()) return;
+
+    try {
+      await axios.post(
+        `http://localhost:8000/api/posts/${postId}/comment/${commentId}/reply`,
+        { text },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setReplyTextMap({ ...replyTextMap, [commentId]: '' });
+      setReplyingToCommentId(null);
+      fetchPosts();
+    } catch (err) {
+      alert('Failed to send reply');
     }
   };
 
@@ -129,7 +150,7 @@ function Home() {
       fetchPosts();
     } catch (err) {
       console.error(err);
-      alert('Failed to edit reply');
+      alert('Failed to edit comment');
     }
   };
 
@@ -140,7 +161,7 @@ function Home() {
       });
       fetchPosts();
     } catch (err) {
-      alert('Failed to delete reply');
+      alert('Failed to delete comment');
     }
   };
 
@@ -190,7 +211,6 @@ function Home() {
   return (
     <div style={{ maxWidth: '600px', margin: '20px auto', padding: '0 10px', fontFamily: 'Arial, sans-serif' }}>
       
-      {/* Create Post */}
       <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #ddd' }}>
         <h3 style={{ marginTop: 0 }}>Create a Post</h3>
         <form onSubmit={handleCreatePost}>
@@ -227,10 +247,9 @@ function Home() {
         return (
           <div key={post._id} style={{ background: '#fff', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #ddd' }}>
             
-            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <p style={{ fontWeight: 'bold', margin: 0 }}>@{post.user?.username || 'User'}</p>
+                <p style={{ fontWeight: 'bold', margin: 0 }}>{post.user?.username || 'User'}</p>
                 
                 {!isPostOwner && post.user?._id && (
                   <button
@@ -268,7 +287,6 @@ function Home() {
               )}
             </div>
 
-            
             {editingPostId === post._id ? (
               <div style={{ margin: '15px 0' }}>
                 <input
@@ -296,7 +314,6 @@ function Home() {
               </div>
             )}
 
-            
             <div style={{ marginBottom: '15px' }}>
               <button 
                 onClick={() => handleLike(post._id)} 
@@ -308,53 +325,86 @@ function Home() {
 
             <hr style={{ border: '0.5px solid #eee' }} />
 
-            
             <div style={{ marginTop: '10px' }}>
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#555' }}>Replies</h4>
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#555' }}>Comments</h4>
               
               {post.comments?.map((comment) => {
                 const isCommentOwner = comment.user?._id === currentUserId;
 
                 return (
-                  <div key={comment._id} style={{ background: '#f8f9fa', padding: '8px 12px', borderRadius: '6px', marginBottom: '6px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div key={comment._id} style={{ background: '#f8f9fa', padding: '10px 12px', borderRadius: '6px', marginBottom: '8px', fontSize: '14px' }}>
                     
-                    {editingCommentId === comment._id ? (
-                      <div style={{ display: 'flex', gap: '5px', width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {editingCommentId === comment._id ? (
+                        <div style={{ display: 'flex', gap: '5px', width: '100%' }}>
+                          <input
+                            type="text"
+                            value={editCommentText}
+                            onChange={(e) => setEditCommentText(e.target.value)}
+                            style={{ flex: 1, padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                          />
+                          <button onClick={() => handleSaveEditComment(post._id, comment._id)} style={{ background: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', fontSize: '12px' }}>Save</button>
+                          <button onClick={() => setEditingCommentId(null)} style={{ background: '#6c757d', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', fontSize: '12px' }}>Cancel</button>
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <strong style={{ color: '#007bff' }}>{comment.user?.username || 'User'}: </strong>
+                            <span>{comment.text}</span>
+                          </div>
+
+                          {isCommentOwner && (
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <button 
+                                onClick={() => { setEditingCommentId(comment._id); setEditCommentText(comment.text); }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px' }}
+                                title="Edit comment"
+                              >
+                                ✏️
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteComment(post._id, comment._id)}
+                                style={{ background: 'none', border: 'none', color: '#ff4d4f', cursor: 'pointer', fontSize: '13px' }}
+                                title="Delete comment"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => setReplyingToCommentId(replyingToCommentId === comment._id ? null : comment._id)}
+                      style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', fontSize: '12px', padding: 0, marginTop: '5px' }}
+                    >
+                      Reply
+                    </button>
+
+                    {comment.replies && comment.replies.map((reply) => (
+                      <div key={reply._id} style={{ marginLeft: '15px', marginTop: '6px', padding: '6px', background: '#fff', borderLeft: '2px solid #007bff', borderRadius: '4px' }}>
+                        <strong style={{ fontSize: '12px', color: '#333' }}>{reply.user?.username || 'User'}: </strong>
+                        <span style={{ fontSize: '13px' }}>{reply.text}</span>
+                      </div>
+                    ))}
+
+                    {replyingToCommentId === comment._id && (
+                      <div style={{ display: 'flex', gap: '5px', marginTop: '8px', marginLeft: '15px' }}>
                         <input
                           type="text"
-                          value={editCommentText}
-                          onChange={(e) => setEditCommentText(e.target.value)}
-                          style={{ flex: 1, padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                          placeholder="Write a reply..."
+                          value={replyTextMap[comment._id] || ''}
+                          onChange={(e) => setReplyTextMap({ ...replyTextMap, [comment._id]: e.target.value })}
+                          style={{ flex: 1, padding: '5px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '13px' }}
                         />
-                        <button onClick={() => handleSaveEditComment(post._id, comment._id)} style={{ background: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', fontSize: '12px' }}>Save</button>
-                        <button onClick={() => setEditingCommentId(null)} style={{ background: '#6c757d', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', fontSize: '12px' }}>Cancel</button>
+                        <button 
+                          onClick={() => handleSendReply(post._id, comment._id)}
+                          style={{ padding: '4px 10px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                        >
+                          Send
+                        </button>
                       </div>
-                    ) : (
-                      <>
-                        <div>
-                          <strong style={{ color: '#007bff' }}>@{comment.user?.username || 'User'}: </strong>
-                          <span>{comment.text}</span>
-                        </div>
-
-                        {isCommentOwner && (
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <button 
-                              onClick={() => { setEditingCommentId(comment._id); setEditCommentText(comment.text); }}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px' }}
-                              title="Edit reply"
-                            >
-                              ✏️
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteComment(post._id, comment._id)}
-                              style={{ background: 'none', border: 'none', color: '#ff4d4f', cursor: 'pointer', fontSize: '13px' }}
-                              title="Delete reply"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        )}
-                      </>
                     )}
 
                   </div>
@@ -364,7 +414,7 @@ function Home() {
               <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
                 <input
                   type="text"
-                  placeholder="Write a reply..."
+                  placeholder="Write a comment..."
                   value={commentText[post._id] || ''}
                   onChange={(e) => setCommentText({ ...commentText, [post._id]: e.target.value })}
                   style={{ flex: 1, padding: '6px 10px', borderRadius: '4px', border: '1px solid #ccc' }}
@@ -373,7 +423,7 @@ function Home() {
                   onClick={() => handleAddComment(post._id)} 
                   style={{ padding: '6px 12px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
-                  Reply
+                  Comment
                 </button>
               </div>
             </div>
