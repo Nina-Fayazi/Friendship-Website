@@ -176,7 +176,7 @@ function Profile() {
                 fontSize: '14px'
               }}
             >
-             
+              Edit Profile
             </button>
           )}
         </div>
