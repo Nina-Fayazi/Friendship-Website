@@ -21,7 +21,7 @@ function Profile() {
       setError('');
       try {
         const meRes = await axios.get('http://localhost:8000/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ` + token }
         });
         const currentUser = meRes.data.user || meRes.data;
         const myId = currentUser._id || currentUser.id;
@@ -30,7 +30,7 @@ function Profile() {
         if (userId) {
           try {
             const uRes = await axios.get(`http://localhost:8000/api/auth/user/${userId}`, {
-              headers: { Authorization: `Bearer ${token}` }
+              headers: { Authorization: `Bearer ` + token }
             });
             const targetUser = uRes.data.user || uRes.data;
             setUserProfile(targetUser);
@@ -42,7 +42,7 @@ function Profile() {
             }
           } catch (e) {
             const postsRes = await axios.get(`http://localhost:8000/api/posts/user/${userId}`, {
-              headers: { Authorization: `Bearer ${token}` }
+              headers: { Authorization: `Bearer ` + token }
             });
             setPosts(postsRes.data);
             if (postsRes.data.length > 0 && postsRes.data[0].user) {
@@ -53,7 +53,7 @@ function Profile() {
           }
 
           const postsRes = await axios.get(`http://localhost:8000/api/posts/user/${userId}`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ` + token }
           });
           setPosts(postsRes.data);
 
@@ -61,7 +61,7 @@ function Profile() {
           setUserProfile(currentUser);
 
           const postsRes = await axios.get(`http://localhost:8000/api/posts/user/${myId}`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ` + token }
           });
           setPosts(postsRes.data);
         }
@@ -85,7 +85,7 @@ function Profile() {
       await axios.put(
         `http://localhost:8000/api/users/${userId}/${endpoint}`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ` + token } }
       );
 
       setIsFollowing(!isFollowing);
@@ -110,9 +110,20 @@ function Profile() {
     <div style={{ maxWidth: '600px', margin: '30px auto', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       {userProfile && (
         <div style={{ padding: '20px', backgroundColor: '#f0f2f5', borderRadius: '10px', marginBottom: '30px', textAlign: 'center' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#007bff', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 15px' }}>
-            {userProfile.username?.[0]?.toUpperCase() || 'U'}
+          
+          
+          <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#007bff', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 15px', overflow: 'hidden' }}>
+            {userProfile.avatar ? (
+              <img 
+                src={`http://localhost:8000${userProfile.avatar}`} 
+                alt="Profile" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+            ) : (
+              userProfile.username?.[0]?.toUpperCase() || 'U'
+            )}
           </div>
+
           <h2 style={{ margin: '5px 0' }}>@{userProfile.username}</h2>
           {userProfile.email && <p style={{ color: '#666', margin: '5px 0' }}>{userProfile.email}</p>}
           <p style={{ fontWeight: 'bold', color: '#007bff', marginTop: '10px' }}>
@@ -130,7 +141,6 @@ function Profile() {
               <p style={{ margin: 0 }}>Following</p>
             </div>
           </div>
-
           
           {!isOwnProfile && (
             <button
@@ -150,7 +160,6 @@ function Profile() {
               {isFollowing ? 'Unfollow' : 'Follow'}
             </button>
           )}
-
           
           {isOwnProfile && (
             <button
@@ -180,7 +189,16 @@ function Profile() {
         ) : (
           posts.map((post) => (
             <div key={post._id} style={{ padding: '15px', border: '1px solid #e0e0e0', borderRadius: '8px', backgroundColor: '#fff' }}>
-              <p style={{ margin: '0 0 10px 0', color: '#333' }}>{post.content}</p>
+              {post.content && <p style={{ margin: '0 0 10px 0', color: '#333', fontSize: '16px' }}>{post.content}</p>}
+              
+              {post.image && (
+                <img 
+                  src={`http://localhost:8000${post.image}`} 
+                  alt="Post attachment" 
+                  style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '6px', objectFit: 'cover', marginBottom: '10px' }} 
+                />
+              )}
+
               <span style={{ fontSize: '13px', color: '#888' }}>❤️ {post.likes ? post.likes.length : 0} Likes</span>
             </div>
           ))

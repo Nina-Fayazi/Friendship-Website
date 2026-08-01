@@ -5,13 +5,13 @@ import axios from 'axios';
 function EditProfile() {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
 
-  
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -28,17 +28,28 @@ function EditProfile() {
     fetchUserData();
   }, [token]);
 
- 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
     setError('');
 
     try {
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('bio', bio);
+      if (profileImage) {
+        formData.append('profilePicture', profileImage);
+      }
+
       const res = await axios.put(
         'http://localhost:8000/api/auth/update-profile',
-        { username, bio },
-        { headers: { Authorization: `Bearer ${token}` } }
+        formData,
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data' 
+          } 
+        }
       );
       setMessage(res.data.message);
       setTimeout(() => {
@@ -57,13 +68,23 @@ function EditProfile() {
       
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <div>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Username:</label>
+          <label style={{ style: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Username:</label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
             required
+          />
+        </div>
+
+        <div>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Profile Picture:</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setProfileImage(e.target.files[0])}
+            style={{ fontSize: '14px' }}
           />
         </div>
 
@@ -72,7 +93,7 @@ function EditProfile() {
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', height: '80px' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', height: '80px', boxSizing: 'border-box' }}
             placeholder="Tell something about yourself..."
           />
         </div>

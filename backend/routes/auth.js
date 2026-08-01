@@ -3,6 +3,18 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken'); 
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); 
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); 
+  }
+});
+const upload = multer({ storage: storage });
 
 router.post('/register', async (req, res) => {
   try {
@@ -37,7 +49,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -62,7 +73,8 @@ router.post('/login', async (req, res) => {
         username: user.username,
         email: user.email,
         avatar: user.avatar,
-        bio: user.bio
+        bio: user.bio,
+        profilePicture: user.profilePicture
       }
     });
 
@@ -70,7 +82,6 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
-
 
 router.get('/me', protect, async (req, res) => {
   try {
@@ -83,7 +94,6 @@ router.get('/me', protect, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 router.get('/search', protect, async (req, res) => {
   try {
@@ -103,7 +113,6 @@ router.get('/search', protect, async (req, res) => {
   }
 });
 
-
 router.get('/user/:id', protect, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
@@ -116,10 +125,9 @@ router.get('/user/:id', protect, async (req, res) => {
   }
 });
 
-router.put('/update-profile', protect, async (req, res) => {
+router.put('/update-profile', protect, upload.single('profilePicture'), async (req, res) => {
   try {
     const { username, bio } = req.body;
-    
     
     const userId = req.userId || req.user;
     const user = await User.findById(userId);
@@ -128,7 +136,6 @@ router.put('/update-profile', protect, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-  
     if (username && username !== user.username) {
       const usernameExists = await User.findOne({ username });
       if (usernameExists) {
@@ -141,6 +148,11 @@ router.put('/update-profile', protect, async (req, res) => {
       user.bio = bio;
     }
 
+    // ذخیره مسیر عکس در فیلد avatar
+    if (req.file) {
+      user.avatar = `/uploads/${req.file.filename}`;
+    }
+
     const updatedUser = await user.save();
 
     res.status(200).json({
@@ -149,7 +161,8 @@ router.put('/update-profile', protect, async (req, res) => {
         id: updatedUser._id,
         username: updatedUser.username,
         email: updatedUser.email,
-        bio: updatedUser.bio
+        bio: updatedUser.bio,
+        avatar: updatedUser.avatar
       }
     });
   } catch (err) {
